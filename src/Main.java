@@ -1,21 +1,38 @@
 import javafx.util.Pair;
 
 import java.math.BigInteger;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public class Main {
 
     private static int max = 200;
 
     public static void main(String[] args) {
-        double a = (-1) % (7 * 9);
-        System.out.println(a);
-        new Main().exec();
+        new Main().exec2();
+    }
+
+    void exec2() {
+        BigInteger p = randSimple();
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter from 0 to " + p);
+        BigInteger m = new BigInteger(String.valueOf(scanner.nextInt()));
+
+        BigInteger g = getPRoot(p);
+
+        BigInteger x = rand(p);
+
+        BigInteger y = pow(g, x).mod(p);
+        System.out.println("Public key = " + y);
+        System.out.println("Private key = " + x);
+        Pair<BigInteger, BigInteger> pair = encrypte(m, g, y, p);
+        System.out.println("Pair " + pair);
+        System.out.println(decrypte(pair, x, p));
     }
 
     void exec() {
-        BigInteger m = new BigInteger("10014");
+        /*BigInteger m = new BigInteger("10014");
+        BigInteger p = randSimple();
         BigInteger g = rand();
 
         BigInteger x = rand();//Private key
@@ -26,12 +43,23 @@ public class Main {
 
         System.out.println(g + "\t" + x + "\t" + y);
         System.out.println(pair);
-        System.out.println("Was = " + m + "; Become = " + decrypte + ".");
+        System.out.println("Was = " + m + "; Become = " + decrypte + ".");*/
 
     }
 
-    private BigInteger decrypte(Pair<BigInteger, BigInteger> pair, BigInteger x) {
-        return pair.getValue().divide(pow(pair.getKey(), x));
+    private BigInteger randSimple() {
+        BigInteger number = rand();
+        while (!number.isProbablePrime(100)) {
+            number = rand();
+        }
+        return number;
+    }
+
+    private BigInteger decrypte(Pair<BigInteger, BigInteger> pair, BigInteger x, BigInteger p) {
+        return (pair.getValue()
+                .multiply(getSmth(pow(pair.getKey(), x), p)))
+                .mod(p);
+        //.divide(pow(pair.getKey(), x));
     }
 
     /**
@@ -44,11 +72,24 @@ public class Main {
         return new BigInteger(String.valueOf(r.nextInt(high - low) + low));
     }
 
-    private Pair<BigInteger, BigInteger> encrypte(BigInteger m, BigInteger g, BigInteger y) {
-        BigInteger r = rand();
+    private BigInteger rand(BigInteger n) {
+        Random rand = new Random();
+        BigInteger result = new BigInteger(n.bitLength(), rand);
+        while (result.compareTo(n) >= 0) {
+            result = new BigInteger(n.bitLength(), rand);
+        }
+        if (result.equals(new BigInteger("0"))
+                || result.equals(new BigInteger("1"))
+                || result.equals(n.subtract(BigInteger.ONE)))
+            result = new BigInteger("2");
+        return result;
+    }
+
+    private Pair<BigInteger, BigInteger> encrypte(BigInteger m, BigInteger g, BigInteger y, BigInteger p) {
+        BigInteger r = rand(p);
         return new Pair<>(
-                pow(g, r),
-                m.multiply(pow(y, r))
+                pow(g, r).mod(p),
+                m.multiply(pow(y, r).mod(p))
         );
     }
 
@@ -62,19 +103,42 @@ public class Main {
         return result;
     }
 
-    BigInteger gcd (BigInteger a, BigInteger b) {
-        if (a.compareTo(b) <0) { return b.gcd(a); }
-        else if (Objects.equals(a.mod(b), new BigInteger("0"))) { return b; }
-        else return gcd(b, a.mod(b));
-    }
-
     //generate random num
-    BigInteger gen_key (BigInteger q) {
-        BigInteger key;
-        key = rand();
+    BigInteger genKey(BigInteger q) {
+        BigInteger key = rand();
         while (!Objects.equals(q.gcd(q), BigInteger.ONE)) {
             key = q.add(rand().mod(new BigInteger("3646")));
         }
         return key;
+    }
+
+    public static BigInteger getPRoot(BigInteger p) {
+        for (BigInteger i = BigInteger.ZERO; i.compareTo(p) < 0; i = i.add(BigInteger.ONE))
+            if (IsPRoot(p, i))
+                return i;
+        return BigInteger.ZERO;
+    }
+
+    public static boolean IsPRoot(BigInteger p, BigInteger a) {
+        if (a.equals(BigInteger.ZERO) || a.equals(BigInteger.ONE))
+            return false;
+        BigInteger last = BigInteger.ONE;
+
+        Set<BigInteger> set = new HashSet<>();
+        for (BigInteger i = BigInteger.ZERO; i.compareTo(p.subtract(BigInteger.ONE)) < 0; i = i.add(BigInteger.ONE)) {
+            last = (last.multiply(a)).mod(p);
+            if (set.contains(last)) // Если повтор
+                return false;
+            set.add(last);
+        }
+        return true;
+    }
+
+    public BigInteger getSmth(BigInteger a, BigInteger m) {
+        BigInteger b = BigInteger.ONE;
+        while (!a.multiply(b).mod(m).equals(BigInteger.ONE)) {
+            b = b.add(BigInteger.ONE);
+        }
+        return b;
     }
 }
