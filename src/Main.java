@@ -1,11 +1,12 @@
 import javafx.util.Pair;
 
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.Random;
 
 public class Main {
 
-    private static int max = 10;
+    private static int max = 200;
 
     public static void main(String[] args) {
         double a = (-1) % (7 * 9);
@@ -14,7 +15,7 @@ public class Main {
     }
 
     void exec() {
-        BigInteger m = new BigInteger("10");
+        BigInteger m = new BigInteger("10014");
         BigInteger g = rand();
 
         BigInteger x = rand();//Private key
@@ -38,7 +39,7 @@ public class Main {
      */
     private BigInteger rand() {
         Random r = new Random();
-        int low = 5;
+        int low = 1;
         int high = max;
         return new BigInteger(String.valueOf(r.nextInt(high - low) + low));
     }
@@ -59,5 +60,21 @@ public class Main {
             exponent = exponent.shiftRight(1);
         }
         return result;
+    }
+
+    BigInteger gcd (BigInteger a, BigInteger b) {
+        if (a.compareTo(b) <0) { return b.gcd(a); }
+        else if (Objects.equals(a.mod(b), new BigInteger("0"))) { return b; }
+        else return gcd(b, a.mod(b));
+    }
+
+    //generate random num
+    BigInteger gen_key (BigInteger q) {
+        BigInteger key;
+        key = rand();
+        while (!Objects.equals(q.gcd(q), BigInteger.ONE)) {
+            key = q.add(rand().mod(new BigInteger("3646")));
+        }
+        return key;
     }
 }
